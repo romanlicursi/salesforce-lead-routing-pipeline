@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Lead_Routing_Flow.flow-meta.xml
+  Record-Triggered Flow: fires when Lead_Score__c is updated.
+
+  Logic:
+    Score >= 75  → Hot  → assign to Hot Leads Queue + Task "Follow up within 24h"
+    Score 50–74  → Warm → Task "Schedule discovery call this week"
+    Score < 50   → Cold → no action (enroll in nurture sequence in production)
+
+  To deploy: Setup → Flow Builder → Import (or recreate via the builder using this spec).
+-->
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>59.0</apiVersion>
+    <description>Routes leads to tiers (Hot/Warm/Cold) and creates SDR tasks based on Lead_Score__c set by the Python scoring pipeline.</description>
+    <environments>Default</environments>
+    <interviewLabel>Lead Routing Flow {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Lead Routing Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>176</locationX>
+        <locationY>0</locationY>
+        <filterLogic>1</filterLogic>
+        <filters>
+            <field>Lead_Score__c</field>
+            <operator>IsChanged</operator>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </filters>
+        <object>Lead</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+        <connector>
+            <targetReference>Score_Tier_Decision</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+
+    <!-- ── Decision: Score Tier ── -->
+    <decisions>
+        <name>Score_Tier_Decision</name>
+        <label>Score Tier Decision</label>
+        <locationX>176</locationX>
+        <locationY>120</locationY>
+        <defaultConnectorLabel>Cold (Score &lt; 50)</defaultConnectorLabel>
+        <defaultConnector>
+            <targetReference>Set_Cold_Tier</targetReference>
+        </defaultConnector>
+        <rules>
+            <name>Is_Hot</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Lead_Score__c</leftValueReference>
+                <operator>GreaterThanOrEqualTo</operator>
+                <rightValue>
+                    <numberValue>75.0</numberValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Hot_Tier</targetReference>
+            </connector>
+            <label>Hot (Score &gt;= 75)</label>
+        </rules>
+        <rules>
+            <name>Is_Warm</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Lead_Score__c</leftValueReference>
+                <operator>GreaterThanOrEqualTo</operator>
+                <rightValue>
+                    <numberValue>50.0</numberValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Set_Warm_Tier</targetReference>
+            </connector>
+            <label>Warm (Score 50–74)</label>
+        </rules>
+    </decisions>
+
+    <!-- ── Update: Set Hot Tier + Assign Queue ── -->
+    <recordUpdates>
+        <name>Set_Hot_Tier</name>
+        <label>Set Hot Tier</label>
+        <locationX>0</locationX>
+        <locationY>240</locationY>
+        <inputAssignments>
+            <field>Lead_Score_Tier__c</field>
+            <value>
+                <stringValue>Hot</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>OwnerId</field>
+            <value>
+                <!-- Replace with your Hot Leads Queue ID from Setup → Queues -->
+                <stringValue>REPLACE_WITH_HOT_LEADS_QUEUE_ID</stringValue>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+        <connector>
+            <targetReference>Create_Hot_Task</targetReference>
+        </connector>
+    </recordUpdates>
+
+    <!-- ── Create Task: Hot Lead ── -->
+    <recordCreates>
+        <name>Create_Hot_Task</name>
+        <label>Create Hot Lead Task</label>
+        <locationX>0</locationX>
+        <locationY>360</locationY>
+        <inputAssignments>
+            <field>Subject</field>
+            <value>
+                <stringValue>HOT LEAD — Follow up within 24 hours</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>WhoId</field>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Status</field>
+            <value>
+                <stringValue>Not Started</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Priority</field>
+            <value>
+                <stringValue>High</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Description</field>
+            <value>
+                <stringValue>Auto-generated by Lead Routing Flow. Lead Score: {!$Record.Lead_Score__c}. Assigned to Hot Leads Queue — contact within 24 hours.</stringValue>
+            </value>
+        </inputAssignments>
+        <object>Task</object>
+    </recordCreates>
+
+    <!-- ── Update: Set Warm Tier ── -->
+    <recordUpdates>
+        <name>Set_Warm_Tier</name>
+        <label>Set Warm Tier</label>
+        <locationX>352</locationX>
+        <locationY>240</locationY>
+        <inputAssignments>
+            <field>Lead_Score_Tier__c</field>
+            <value>
+                <stringValue>Warm</stringValue>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+        <connector>
+            <targetReference>Create_Warm_Task</targetReference>
+        </connector>
+    </recordUpdates>
+
+    <!-- ── Create Task: Warm Lead ── -->
+    <recordCreates>
+        <name>Create_Warm_Task</name>
+        <label>Create Warm Lead Task</label>
+        <locationX>352</locationX>
+        <locationY>360</locationY>
+        <inputAssignments>
+            <field>Subject</field>
+            <value>
+                <stringValue>WARM LEAD — Schedule discovery call this week</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>WhoId</field>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Status</field>
+            <value>
+                <stringValue>Not Started</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Priority</field>
+            <value>
+                <stringValue>Normal</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Description</field>
+            <value>
+                <stringValue>Auto-generated by Lead Routing Flow. Lead Score: {!$Record.Lead_Score__c}. Schedule a discovery call within this week.</stringValue>
+            </value>
+        </inputAssignments>
+        <object>Task</object>
+    </recordCreates>
+
+    <!-- ── Update: Set Cold Tier ── -->
+    <recordUpdates>
+        <name>Set_Cold_Tier</name>
+        <label>Set Cold Tier</label>
+        <locationX>528</locationX>
+        <locationY>240</locationY>
+        <inputAssignments>
+            <field>Lead_Score_Tier__c</field>
+            <value>
+                <stringValue>Cold</stringValue>
+            </value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+        <!-- No task for Cold leads — enroll in nurture sequence in production -->
+    </recordUpdates>
+
+</Flow>
