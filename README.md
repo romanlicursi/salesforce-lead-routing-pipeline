@@ -167,6 +167,8 @@ Screenshots in `/screenshots/`.
 
 ## Why This Project
 
-Most RevOps automation stops at "score leads in a spreadsheet." This pipeline closes the loop — scores are written back to the CRM where they drive real workflow logic. The combination of Python API fluency + native SFDC Flows is the pattern used in production RevOps stacks at growth-stage companies.
+I already had a lead scoring model sitting in a repo doing nothing after it ran. The obvious next question was: what's the point of a score if it lives in a CSV?
 
-Related: [lead-scoring-automation](https://github.com/romanlicursi/lead-scoring-automation) — the standalone ML scoring system this pipeline extends into Salesforce.
+I wanted to learn how Salesforce actually works at the API level, not just click through Trailhead. So I connected the Python scoring logic directly to a real Salesforce org, wrote the scores back via the bulk API, and built a Flow that does something with them. The whole thing runs start to finish without touching the browser.
+
+Related: [lead-scoring-automation](https://github.com/romanlicursi/lead-scoring-automation) — the standalone scoring system this project extends into Salesforce.
