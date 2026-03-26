@@ -139,7 +139,19 @@ Three reports combined into one **"RevOps Lead Pipeline"** dashboard in SFDC:
 | Lead Source vs. Avg Score | Bar — avg score per source | Which acquisition channels yield highest-quality leads |
 | Open Tasks by Lead Tier | Summary table | SDR workload by tier |
 
+![Lead Score Distribution Dashboard](screenshots/sfdc_dashboard.png)
+
 Screenshots in `/screenshots/`.
+
+---
+
+## Screenshots
+
+**Flow Builder — Lead Routing Logic**
+![Flow Builder](screenshots/flow_builder.png)
+
+**Lead Records — Seeded via Python Pipeline**
+![Lead Records](screenshots/lead_records.png)
 
 ---
 

@@ -101,7 +101,7 @@
             <field>OwnerId</field>
             <value>
                 <!-- Replace with your Hot Leads Queue ID from Setup → Queues -->
-                <stringValue>REPLACE_WITH_HOT_LEADS_QUEUE_ID</stringValue>
+                <stringValue>00Gbm00000Iiyir</stringValue>
             </value>
         </inputAssignments>
         <inputReference>$Record</inputReference>

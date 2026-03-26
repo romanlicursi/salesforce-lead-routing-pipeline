@@ -123,17 +123,13 @@ def predict_score(model: Pipeline, df: pd.DataFrame) -> np.ndarray:
 # ── Step 2: Salesforce auth ──────────────────────────────────────────────────
 
 def connect_to_salesforce() -> Salesforce:
-    username       = os.environ["SF_USERNAME"]
-    password       = os.environ["SF_PASSWORD"]
-    security_token = os.environ["SF_SECURITY_TOKEN"]
-    domain         = os.environ.get("SF_DOMAIN", "login")  # "test" for sandboxes
+    session_id   = os.environ["SF_SESSION_ID"]
+    instance_url = os.environ["SF_INSTANCE_URL"]
 
-    print(f"Connecting to Salesforce as {username} (domain: {domain})…")
+    print(f"Connecting to Salesforce via session ID…")
     sf = Salesforce(
-        username=username,
-        password=password,
-        security_token=security_token,
-        domain=domain,
+        session_id=session_id,
+        instance_url=instance_url,
     )
     print(f"Connected. Instance: {sf.sf_instance}\n")
     return sf
